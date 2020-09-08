@@ -18,8 +18,15 @@ class MailMessage:
         self.subject = subject
         self.folder = IMAP_folder
 
+    def __repr__(self):
+        return f""
+
     def create_email_object(self):
         pass
+
+    def years(self):
+        years = list(self.__dict__.values())[0]
+        return years
 
 
 class AllMessages(dict):
@@ -43,7 +50,7 @@ with MailBox(HOST).login(USERNAME, PASSWORD) as mailbox:
     # messages = mailbox.fetch(AND(all=True))
     folders = mailbox.folder.list()  # lists folders in specific mailbox
     folder_names = [folder["name"] for folder in folders]
-
+    mhs = []
     for folder_name in folder_names:
         mailbox.folder.set(folder_name)
         for msg in mailbox.fetch():
@@ -60,9 +67,11 @@ with MailBox(HOST).login(USERNAME, PASSWORD) as mailbox:
                 subject=subject,
                 IMAP_folder=folder_name,
             )
-            print(element)
+            print(element.__dict__['year'])
+            mhs.append(element.__dict__['day'])
             all_messages.rename_and_insert(element)
 
 
 if __name__ == "__main__":
-    pprint.pprint(sorted(all_messages.keys()))
+    print(set(mhs))
+    pprint.pprint(all_messagesgs.values().__dict__['month'])
