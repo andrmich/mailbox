@@ -17,7 +17,7 @@ from time import time
 
 from fuse import FUSE, Operations, LoggingMixIn
 
-from directory_tree import elem, dirs_to_create
+from directory_tree import elem, set_dirs_to_create
 
 
 class FuseOSError(OSError):
@@ -97,7 +97,7 @@ class Memory(Operations):
                 }
             ),
         }
-        for key in dirs_to_create:
+        for key in set_dirs_to_create:
             self.files[f"/timeline{key}"] = Directory(
                 {
                     "st_mode": 16877,
@@ -107,20 +107,24 @@ class Memory(Operations):
                     "st_nlink": 2,
                 }
             )
-        for key in elem.keys():
+
+        for key, value in elem.items():
+            # print(f"{value=}")
             self.files[f"/timeline{key}"] = PseudoFile(
                 {
                     "st_mode": 33188,
                     "st_nlink": 1,
-                    "st_size": 0,
+                    "st_size": 1441,
                     "st_ctime": 1599908285.62782,
                     "st_mtime": 1599908285.6278203,
                     "st_atime": 1599908285.6278203,
                 }
             )
+            self.data[f"/timeline{key}"] = value
+            # print(self.data[f"/timeline{key}"])
 
-        print(f"{elem.keys()=}")
-        print(self.files.keys())
+        # print(f"{elem.keys()=}")
+        # print(self.files.keys())
 
     def chmod(self, path, mode):
         this_function_name = cast(
@@ -158,7 +162,8 @@ class Memory(Operations):
         print(f"getattr({path=}, {fh=})")
         if path not in self.files:
             raise FuseOSError(ENOENT, filename=path)
-
+        if path in self.data:
+            self.files[path]["st_size"]= len(self.data[path])
         return self.files[path]
 
     def getxattr(self, path, name, position=0):
@@ -207,7 +212,12 @@ class Memory(Operations):
             types.FrameType, inspect.currentframe()
         ).f_code.co_name
         print(this_function_name)
-        return self.data[path][offset : offset + size]
+        # print(f"{path=}")
+        # print(f"{offset=}")
+        print(f"{size=}")
+        print(f"{self.data[path]=}, {len(self.data[path])}")
+        return self.data[path]
+        # return self.data[path][offset : offset + size]
 
     def readdir(self, path, fh):
         print(f"readdir({path=}, {fh=}")

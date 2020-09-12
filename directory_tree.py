@@ -1,4 +1,5 @@
-from pprint import pprint
+# from pprint import pprint
+from rich import print
 
 from new_mail import dates_dict
 
@@ -27,6 +28,60 @@ from new_mail import dates_dict
 #         },
 #     }
 # }
+# dates_dict = {
+#     "2020": {
+#         "03": {
+#             "23": {"no-reply@accounts.google.com-Alert bezpiecze": ["fileconent23"]}
+#         },
+#         "06": {
+#             "02": {"no-reply@accounts.google.com-Alert bezpiecze-1": ["fileconent02"]},
+#             "03": {
+#                 "kontakt@best-you.pl-Jutro koniec ak": ["fileconent03"],
+#                 "kontakt@doradca.tv-Zerowe stopy pr": ["fileconent03"],
+#             },
+#             "12": {"hello@hyperskill.org-What to do if y": ["fileconent03"]},
+#             "16": {
+#                 "calendar-notification@google.com-Powiadomienie: ": ["fileconent03"]
+#             },
+#             "17": {
+#                 "contact@sinsay.com-Ustalenie noweg": ["fileconent03"],
+#                 "help@doyou.com-Hey, is this ri": ["fileconent03"],
+#             },
+#             "no-reply@m.mail.coursera.org-Lead for Change": ["fileconent03"],
+#         },
+#         "24": {"googleaccount-noreply@google.com-Sabina, sprawdź": ["fileconent03"]},
+#         "28": {"kontakt@doradca.tv-Czy jesteśmy w ": ["fileconent03"]},
+#         "29": {
+#             "no-reply@accounts.google.com-Alert bezpiecze-2": ["fileconent03"],
+#             "no-reply@accounts.google.com-Alert bezpiecze-3": ["fileconent03"],
+#         },
+#         "30": {"kontakt@doradca.tv-W obawie przed ": ["fileconent03"]},
+#     },
+#     "07": {
+#         "04": {"kontakt@doradca.tv-Skład portfela ": ["fileconent03"]},
+#         "09": {"no-reply@t.mail.coursera.org-Welcome to Cont": ["fileconent03"]},
+#     },
+#     "09": {
+#         "08": {
+#             "support@fastmail.com-Your import of ": ["fileconent03"],
+#             "support@fastmail.com-Your import of -1": ["fileconent03"],
+#             "support@fastmail.com-Your import of -2": ["fileconent03"],
+#         },
+#     },
+#     "2021": {
+#         "07": {
+#             "04": {"kontakt@doradca.tv-Skład portfela ": ["fileconent03"]},
+#             "09": {"no-reply@t.mail.coursera.org-Welcome to Cont": ["fileconent03"]},
+#         },
+#         "09": {
+#             "08": {
+#                 "support@fastmail.com-Your import of ": ["fileconent03"],
+#                 "support@fastmail.com-Your import of -1": ["fileconent03"],
+#                 "support@fastmail.com-Your import of -2": ["fileconent03"],
+#             }
+#         },
+#     },
+# }
 
 
 def _flatten_dict(dd, separator="/", prefix=""):
@@ -42,14 +97,14 @@ def _flatten_dict(dd, separator="/", prefix=""):
 
 
 def flatten_file_dict(dd):
-    # pprint(dd)
-    print()
+    # print(dd)
+    # print()
     path_s = {"/" + k: v for k, v in _flatten_dict(dd).items()}
-    pprint(path_s)
+    # print(path_s)
     elem = {}
-    for k, v in path_s.items():
-        for mail in v:
-            elem[k + "/" + mail] = "content"
+    for key, value in path_s.items():
+        elem[key] = value
+
     print(f"{elem=}")
     return elem
 
@@ -64,12 +119,10 @@ def get_dirs_to_create(nested: dict, path="/"):
     return dirs_to_create
 
 
+
+
 dirs_to_create = get_dirs_to_create(dates_dict)
 elem = flatten_file_dict(dates_dict)
+elem_keys = flatten_file_dict(dates_dict).keys()
 
-if __name__ == "__main__":
-    # sil(6)
-    # iterdict(dct)
-    print(elem)
-
-    # print(get_dirs_to_create(dct))
+set_dirs_to_create = dirs_to_create - set(elem_keys)
