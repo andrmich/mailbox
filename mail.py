@@ -1,5 +1,8 @@
+from collections import defaultdict
+
 from imap_tools import MailBox, AND
 import pprint
+from sqlalchemy import create_engine
 
 HOST = "imap.fastmail.com"
 USERNAME = "klops@fastmail.com"
@@ -19,7 +22,7 @@ class MailMessage:
         self.folder = IMAP_folder
 
     def __repr__(self):
-        return f""
+        pass
 
     def create_email_object(self):
         pass
@@ -50,7 +53,10 @@ with MailBox(HOST).login(USERNAME, PASSWORD) as mailbox:
     # messages = mailbox.fetch(AND(all=True))
     folders = mailbox.folder.list()  # lists folders in specific mailbox
     folder_names = [folder["name"] for folder in folders]
-    mhs = []
+    messages_dict_sender = defaultdict(set)
+    messages_dict_folders = defaultdict(set)
+    senders = set()
+    folders = set()
     for folder_name in folder_names:
         mailbox.folder.set(folder_name)
         for msg in mailbox.fetch():
@@ -58,7 +64,7 @@ with MailBox(HOST).login(USERNAME, PASSWORD) as mailbox:
             month = msg.date.month
             day = msg.date.day
             sender = msg.from_
-            subject = msg.subject
+            subject = msg.subject[:20]
             element = MailMessage(
                 year=year,
                 month=month,
@@ -67,11 +73,38 @@ with MailBox(HOST).login(USERNAME, PASSWORD) as mailbox:
                 subject=subject,
                 IMAP_folder=folder_name,
             )
-            print(element.__dict__['year'])
-            mhs.append(element.__dict__['day'])
             all_messages.rename_and_insert(element)
+            # for key, value in all_messages.items():
+            #     if value == element:
+            #         yield key
+            # name = all_messages[element]
+            # senders.add(element.sender)
+            # folders.add(element.folder)
+            # for sender in senders:
+
+            # messages_dict_sender = dict.fromkeys(senders)
+            # print(messages_dict_sender)
+            # messages_dict_sender[sender].add(name)
+            # messages_dict_sender[folder_name].add(name)
+
+            # messages_dict_folders = dict.fromkeys(folders)
+            # messages_dict_folders[f"{element.folder}"].add(name)
+
+    # whole_dict = {"sender": messages_dict_sender, "timeline": messages_dict_folders}
+    # messages_dict["timeline"].add(f"{year}-{name}")
+    #
+    # # messages_dict["timeline"][f"{year}"].add(month)
+    # messages_dict["sender"].add(sender)
+    # messages_dictes_dict["topics"].add(folder_name)
+
+    #     if str(month) not in messages_dict["timeline"]["year"].values():
+    #         messages_dict["timeline"]["year"] = str(month)
+    #         if str(day) not in messages_dict["timeline"]["year"]["month"]:
+    #             messages_dict["timeline"]["year"]["month"] = str(day)
+    # messages_dict["timeline"]["year"]["month"]["day"] = all_messages["desired_name"]
 
 
 if __name__ == "__main__":
-    print(set(mhs))
-    pprint.pprint(all_messagesgs.values().__dict__['month'])
+    # print(set(mhs))
+    # pprint.pprint(all_messagesgs.values().__dict__['month'])
+    pprint.pprint(all_messages)

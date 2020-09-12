@@ -6,6 +6,7 @@ from fuse import FUSE, Operations, FuseOSError
 
 import pprint
 
+
 class Passthrough(Operations):
     def __init__(self, root):
         self.root = root

@@ -1,14 +1,78 @@
 import errno
 import os
 import sys
+from collections import defaultdict
+from stat import S_IFDIR, S_IFREG
+from time import time
 
 from fuse import FUSE, Operations, FuseOSError
-
+import new_mail
 import pprint
+
+
+class MyStat:
+    def __init__(self):
+        self.st_mode = S_IFDIR | 0o0755
+        self.st_ino = 0
+        self.st_dev = 0
+        self.st_nlink = 2
+        self.st_uid = 0
+        self.st_gid = 0
+        self.st_size = 4096
+        self.st_atime = 0
+        self.st_mtime = 0
+        self.st_ctime = 0
+
 
 class Passthrough(Operations):
     def __init__(self, root):
         self.root = root
+        self.files = {}
+        self.data = defaultdict(bytes)
+        # self.data = new_mail.date_dict
+        self.fd = 0
+        now = time()
+        self.files["/"] = dict(
+            st_mode=(S_IFDIR | 0o755),
+            st_ctime=now,
+            st_mtime=now,
+            st_atime=now,
+            st_nlink=2,
+        )
+        self.dirs = {}
+        for key, value in new_mail.dddd.items():
+            self.dirs[key] = dict(
+                st_mode=(S_IFDIR | 0o755),
+                st_ctime=now,
+                st_mtime=now,
+                st_atime=now,
+                st_nlink=2,
+            )
+            print(key)
+            print(new_mail.dddd["2020"])
+            for k, v in new_mail.dddd[key]:
+                self.dirs[k] = dict(
+                    st_mode=(S_IFDIR | 0o755),
+                    st_ctime=now,
+                    st_mtime=now,
+                    st_atime=now,
+                    st_nlink=2,
+                )
+                print(k)
+
+        # for key in self.files.keys():
+        # self.files['/2020'] = dict(
+        # st_mode=(S_IFDIR | 0o755),
+        # st_ctime=now,
+        # st_mtime=now,
+        # st_atime=now,
+        # st_nlink=2)
+        # self.files['/2020/proba'] = dict(
+        # st_mode=(S_IFDIR | 0o755),
+        # st_ctime=now,
+        # st_mtime=now,
+        # st_atime=now,
+        # st_nlink=2)
 
     # Helpers
     # =======
@@ -16,6 +80,7 @@ class Passthrough(Operations):
     def _full_path(self, partial):
         if partial.startswith("/"):
             partial = partial[1:]
+
         path = os.path.join(self.root, partial)
         return path
 
@@ -29,73 +94,120 @@ class Passthrough(Operations):
         if not os.access(full_path, mode=mode_t):
             raise FuseOSError(errno.EACCES)
 
+    # def chmod(self, path, mode):
+    #     print(f"chmod {path=}, {mode=}")
+    #     full_path = self._full_path(path)
+    #     return os.chmod(full_path, mode)
+
     def chmod(self, path, mode):
-        print(f"chmod {path=}, {mode=}")
-        full_path = self._full_path(path)
-        return os.chmod(full_path, mode)
+        self.files[path]["st_mode"] &= 0o770000
+        self.files[path]["st_mode"] |= mode
+        return 0
 
     def chown(self, path, uid, gid):
         print(f"chown {path=}, {uid=}, {gid=}")
         full_path = self._full_path(path)
         return os.chown(full_path, uid, gid)
 
+    # def getattr(self, path, fh=None):
+    #     print(f"getattr({path=}, {fh=})")
+    #     aaa = {
+    #         "st_atime": 1,
+    #         "st_ctime": 1,
+    #         "st_gid": 1000,
+    #         "st_mode": 33444,
+    #         "st_mtime": 1,
+    #         "st_nlink": 1,
+    #         "st_size": 123,
+    #         "st_uid": 1000,
+    #         "st_blocks": 1,
+    #     }
+    #     bbb = {
+    #         "st_atime": 1599500384.7839124,
+    #         "st_ctime": 1599500384.7839124,
+    #         "st_gid": 1000,
+    #         "st_mode": 33444,
+    #         "st_mtime": 1599500384.7839124,
+    #         "st_nlink": 1,
+    #         "st_size": 0,
+    #         "st_uid": 1000,
+    #         "st_blocks": 1,
+    #     }
+    #     # return bbb
+    #     full_path = self._full_path(path)
+    #     st = os.lstat(full_path)
+    #     pprint.pprint(f"{st=}")
+    #     d = dict(
+    #         (key, getattr(st, key))
+    #         for key in (
+    #             "st_atime",
+    #             "st_ctime",
+    #             "st_gid",
+    #             "st_mode",
+    #             "st_mtime",
+    #             "st_nlink",
+    #             "st_size",
+    #             "st_uid",
+    #             "st_blocks",
+    #         )
+    #     )
+    #     print(d)
+    #     return d
+
     def getattr(self, path, fh=None):
-        print(f"getattr({path=}, {fh=})")
-        aaa = {
-            "st_atime": 1,
-            "st_ctime": 1,
-            "st_gid": 1000,
-            "st_mode": 33444,
-            "st_mtime": 1,
-            "st_nlink": 1,
-            "st_size": 123,
-            "st_uid": 1000,
-            "st_blocks": 1,
-        }
-        bbb = {
-            "st_atime": 1599500384.7839124,
-            "st_ctime": 1599500384.7839124,
-            "st_gid": 1000,
-            "st_mode": 33444,
-            "st_mtime": 1599500384.7839124,
-            "st_nlink": 1,
-            "st_size": 0,
-            "st_uid": 1000,
-            "st_blocks": 1,
-        }
-        # return bbb
-        full_path = self._full_path(path)
-        st = os.lstat(full_path)
-        pprint.pprint(f"{st=}")
-        d = dict(
-            (key, getattr(st, key))
-            for key in (
-                "st_atime",
-                "st_ctime",
-                "st_gid",
-                "st_mode",
-                "st_mtime",
-                "st_nlink",
-                "st_size",
-                "st_uid",
-                "st_blocks",
-            )
+        if path not in self.files:
+            raise FuseOSError(errno.ENOENT)
+
+        return self.files[path]
+
+    def create(self, path, mode, fi=None):
+        self.files[path] = dict(
+            st_mode=(S_IFREG | mode),
+            st_nlink=1,
+            st_size=0,
+            st_ctime=time(),
+            st_mtime=time(),
+            st_atime=time(),
         )
-        print(d)
-        return d
 
+        self.fd += 1
+        return self.fd
+
+    # def readdir(self, path, fh):
+    #     full_path = self._full_path(path)
+    #
+    #     dirents = ['.', '..']
+    #     if os.path.isdir(full_path):
+    #         dirents.extend(os.listdir(full_path))
+    #     for r in dirents:
+    #         yield r
+
+    # def readdir(self, path, fh):
+    #     print("readdir", path)
+    #     dirents = [".", ".."]
+    #     if path == "/":
+    #         dirents.append([new_mail.date_dict.keys()])
+    #     else:
+    #         dirents.extend([new_mail.date_dict.keys()])
+    #     for r in dirents:
+    #         yield r
+
+    # def readdir(self, path, fh):
+    #     print(f"readdir({path=}, {fh=})")
+    #     for x in new_mail.date_dict.keys():
+    #         yield x
+    #         return
+    #     full_path = self._full_path(path)
+    #
+    #     dirents = [".", ".."]
+    #     dirents.append(new_mail.date_dict.keys())
+    #     if os.path.isdir(full_path):
+    #         dirents.extend(os.listdir(full_path))
+    #     for r in dirents:
+    #         print(r)
+    #         yield r
     def readdir(self, path, fh):
-        print(f"readdir({path=}, {fh=})")
-        for x in ["YOL0", "Ala", "Chorizo"]:
-            yield x
-        return
-        full_path = self._full_path(path)
-
-        dirents = [".", ".."]
-        if os.path.isdir(full_path):
-            dirents.extend(os.listdir(full_path))
-        for r in dirents:
-            yield r
+        return [".", ".."] + [x for x in self.dirs.keys() if x != "/"]
 
     def readlink(self, path):
         pathname = os.readlink(self._full_path(path))
@@ -112,8 +224,20 @@ class Passthrough(Operations):
         full_path = self._full_path(path)
         return os.rmdir(full_path)
 
+    # def mkdir(self, path, mode):
+    #     return os.mkdir(self._full_path(path), mode)
+
     def mkdir(self, path, mode):
-        return os.mkdir(self._full_path(path), mode)
+        self.files[path] = dict(
+            st_mode=(S_IFDIR | mode),
+            st_nlink=2,
+            st_size=0,
+            st_ctime=time(),
+            st_mtime=time(),
+            st_atime=time(),
+        )
+
+        self.files["/"]["st_nlink"] += 1
 
     def statfs(self, path):
         print(f"statfd {path=}")
