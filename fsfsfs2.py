@@ -16,8 +16,8 @@ from stat import S_IFDIR, S_IFLNK, S_IFREG
 from time import time
 
 from fuse import FUSE, Operations, LoggingMixIn
-# from new_mail import dddd
-from rec import elem, dirs_to_create
+
+from directory_tree import elem, dirs_to_create
 
 
 class FuseOSError(OSError):
@@ -66,7 +66,8 @@ class Memory(Operations):
                     "st_mtime": 1599908032.1020591,
                     "st_atime": 1599908032.1020591,
                     "st_nlink": 2,
-                }),
+                }
+            ),
             "/sender": Directory(
                 {
                     "st_mode": 16877,
@@ -74,7 +75,8 @@ class Memory(Operations):
                     "st_mtime": 1599908032.1020591,
                     "st_atime": 1599908032.1020591,
                     "st_nlink": 2,
-                }),
+                }
+            ),
             "/topics": Directory(
                 {
                     "st_mode": 16877,
@@ -82,7 +84,8 @@ class Memory(Operations):
                     "st_mtime": 1599908032.1020591,
                     "st_atime": 1599908032.1020591,
                     "st_nlink": 2,
-                }),
+                }
+            ),
             "/fset_file": PseudoFile(
                 {
                     "st_mode": 33188,
@@ -102,7 +105,8 @@ class Memory(Operations):
                     "st_mtime": 1599908032.1020591,
                     "st_atime": 1599908032.1020591,
                     "st_nlink": 2,
-                })
+                }
+            )
         for key in elem.keys():
             self.files[f"/timeline{key}"] = PseudoFile(
                 {
@@ -117,7 +121,6 @@ class Memory(Operations):
 
         print(f"{elem.keys()=}")
         print(self.files.keys())
-
 
     def chmod(self, path, mode):
         this_function_name = cast(
@@ -204,7 +207,7 @@ class Memory(Operations):
             types.FrameType, inspect.currentframe()
         ).f_code.co_name
         print(this_function_name)
-        return self.data[path][offset: offset + size]
+        return self.data[path][offset : offset + size]
 
     def readdir(self, path, fh):
         print(f"readdir({path=}, {fh=}")
@@ -214,12 +217,19 @@ class Memory(Operations):
             k: v for k, v in self.files.items() if k.startswith(path) and k != path
         }
         print(f"{files_inside=}")
-        short_dir = list(set([(k[len(path):].lstrip("/")).split("/")[0] for k in files_inside.keys() if k != path]))
+        short_dir = list(
+            set(
+                [
+                    (k[len(path) :].lstrip("/")).split("/")[0]
+                    for k in files_inside.keys()
+                    if k != path
+                ]
+            )
+        )
         return_value = [".", ".."] + short_dir
         return_value = [x for x in return_value if "/" not in x]
         print(f"{return_value}")
         return return_value
-
 
     def readlink(self, path):
         this_function_name = cast(
@@ -318,10 +328,10 @@ class Memory(Operations):
         print(this_function_name)
         self.data[path] = (
             # make sure the data gets inserted at the right offset
-                self.data[path][:offset].ljust(offset, "\x00".encode("ascii"))
-                + data
-                # and only overwrites the bytes that data is replacing
-                + self.data[path][offset + len(data):]
+            self.data[path][:offset].ljust(offset, "\x00".encode("ascii"))
+            + data
+            # and only overwrites the bytes that data is replacing
+            + self.data[path][offset + len(data) :]
         )
         self.files[path]["st_size"] = len(self.data[path])
         return len(data)

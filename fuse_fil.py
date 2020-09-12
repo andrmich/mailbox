@@ -40,7 +40,7 @@ class Passthrough(Operations):
             st_nlink=2,
         )
         self.dirs = {}
-        for key, value in new_mail.dddd.items():
+        for key, value in new_mail.dates_dict.items():
             self.dirs[key] = dict(
                 st_mode=(S_IFDIR | 0o755),
                 st_ctime=now,
@@ -49,8 +49,8 @@ class Passthrough(Operations):
                 st_nlink=2,
             )
             print(key)
-            print(new_mail.dddd["2020"])
-            for k, v in new_mail.dddd[key]:
+            print(new_mail.dates_dict["2020"])
+            for k, v in new_mail.dates_dict[key]:
                 self.dirs[k] = dict(
                     st_mode=(S_IFDIR | 0o755),
                     st_ctime=now,

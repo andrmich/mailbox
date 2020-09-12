@@ -14,24 +14,40 @@ PASSWORD = "rybvb7c275ywquu3"
 
 
 class MailMessage:
-    def __init__(self, year, month, day, sender, subject, IMAP_folder):
-        self.year = year
-        self.month = month
-        self.day = day
+    def __init__(self, sender, subject, content):
         self.sender = sender
         self.subject = subject
-        self.folder = IMAP_folder
+        self.content = content
 
-    def __repr__(self):
-        return MailMessage.__dict__
 
+class AllMessages(dict):
+    def __init__(self):
+        self.known_subjects = dict()
+        super().__init__()
+
+    def rename_and_insert(self, mail: MailMessage):
+        desired_name = f"{mail.sender}-{mail.subject}"
+        # print(f"{desired_name}")
+        if desired_name not in self:
+            self[desired_name] = mail.content
+            self.known_subjects[desired_name] = 0
+            return
+        self.known_subjects[desired_name] += 1
+        self[f"{desired_name}-{self.known_subjects[desired_name]}"] = mail.content
+
+    def return_filename(self, content=None):
+        for key, value in self.items():
+            print(f"{key=}")
+            print(f"{value=}")
+            if value == content:
+                return key
 
 class DateDict:
-    def __init__(self, year, month, day, uid):
+    def __init__(self, year, month, day, filename):
         self.year = year
         self.month = month
         self.day = day
-        self.uid = uid
+        self.uid = filename
 
     def __dict__(self):
         return {self.year: {self.month: self.day}}
@@ -39,6 +55,7 @@ class DateDict:
     def __iter__(self):
         yield from {self.year: {self.month: self.day}}.items()
 
+all_messages = AllMessages()
 
 with Imbox(
     HOST,
@@ -53,75 +70,31 @@ with Imbox(
     senders = set()
     dates = set()
     folders = set()
-    for uid, message in all_inbox_messages:
-        senders.add(message.sent_from[0]["email"])
-        print(f"{message.parsed_date=}, {uid=}")
+    for uid, message in all_inbox_messages[:6]:
+        sender = message.sent_from[0]["email"]
+        senders.add(sender)
         year, month, day = message.parsed_date.strftime("%Y-%m-%d").split("-")
         uid = uid.decode("utf-8")
-        dates.add((DateDict(year, month, day, uid)))
+        mail = MailMessage(
+            sender=sender, subject=message.subject[:15], content=uid
+        )
+        all_messages.rename_and_insert(mail)
+        fil_name = all_messages.return_filename(mail.content)
+        # print(f"{fil_name=}")
+        dates.add((DateDict(year, month, day, fil_name)))
 
     status, folders_with_additional_info = imbox.folders()
     for folder in folders_with_additional_info:
         folders.add((folder.split()[-1]).decode("utf-8"))
 
-    date_dict = dict.fromkeys([date.year for date in dates])
-    for year in date_dict.keys():
-        # print(f"{year=}")
+# print(all_messages)
+dates_dict = {}
 
-        months = set()
-        for data in dates:
-            if data.year == year:
-                months.add(data.month)
-                months_dict = defaultdict(set, {k: set() for k in months})
-
-        for month in months:
-            days = set()
-            for data in dates:
-                # print(f"{month=}")
-                if data.year == year:
-                    if data.month == month:
-                        days.add(data.day)
-                        days_dict = defaultdict(set, {k: set() for k in days})
-
-            for day in days:
-                uids = set()
-                for data in dates:
-                    if data.year == year:
-                        if data.month == month:
-                            if data.day == day:
-                                uids.add(data.uid)
-                days_dict[day] = uids
-
-            months_dict[month] = days_dict
-        date_dict[year] = months_dict
-
-pprint.pprint(date_dict)
-
-
-# if __name__ == '__main__':
-#     print(senders)
-#     print(dates)
-#     print(folders)
-#     pprint.pprint(whole_dict)
-#     pprint.pprint(dates_dict)
-#     pprint.pprint(dates_dict)
-
-
-dddd = {}
 for date in dates:
-    if date.year not in dddd:
-        dddd[date.year] = {}
-    if date.month not in dddd[date.year]:
-        dddd[date.year][date.month] = {}
-    if date.day not in dddd[date.year][date.month]:
-        dddd[date.year][date.month][date.day] = set()
-    dddd[date.year][date.month][date.day].add(date.uid)
-
-pprint.pprint(dddd)
-
-
-def deep_get(_dict, keys, default=None):
-    def _reducer(d, key):
-        if isinstance(d, dict):
-            return d.get(key, default)
-        return default
+    if date.year not in dates_dict:
+        dates_dict[date.year] = {}
+    if date.month not in dates_dict[date.year]:
+        dates_dict[date.year][date.month] = {}
+    if date.day not in dates_dict[date.year][date.month]:
+        dates_dict[date.year][date.month][date.day] = set()
+    dates_dict[date.year][date.month][date.day].add(date.uid)
