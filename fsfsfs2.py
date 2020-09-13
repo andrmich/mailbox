@@ -14,10 +14,7 @@ from typing import Dict, cast
 from fuse import FUSE, LoggingMixIn, Operations
 from rich import inspect as rich_inspect
 from rich import print
-
-from directory_tree import (date_dirs_to_create, date_files, sender_files,
-                            senders_dirs_to_create)
-from mail import topics_dict
+from mail import topics_dict, sender_files, senders_dirs_to_create, date_files, date_dirs_to_create
 
 
 class FuseOSError(OSError):

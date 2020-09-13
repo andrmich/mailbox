@@ -1,8 +1,10 @@
+import json
 import pprint
 from uuid import uuid4
 
 from imap_tools import MailBox
 from rich import inspect, print
+from directory_tree import get_dirs_to_create, flatten_file_dict
 
 HOST = "imap.fastmail.com"
 USERNAME = "klops@fastmail.com"
@@ -38,61 +40,78 @@ class FilenameGenerator:
         return desired_name
 
 
-filename_generator = FilenameGenerator()
-mails = set()
-folders = set()
-
 def create_topics(mbox):
     folders_mailbox = mbox.folder.list()
     return [folder["name"] for folder in folders_mailbox]
 
 
-def create_mail_obj(message):
-    mail = MailMessage(
+def create_mail_obj(message, filename_generator):
+    mail_ = MailMessage(
         sender=message.from_,
         subject=message.subject[:10],
         year=str(message.date.year),
         month=str(message.date.month),
         day=str(message.date.day),
-        content=bytes(msg.html, encoding="utf-8"),
+        content=bytes(message.html, encoding="utf-8"),
     )
-    mail.filename = filename_generator.get_filename(mail)
-    return mail
-
+    mail_.filename = filename_generator.get_filename(mail_)
+    return mail_
 
 with MailBox(HOST).login(USERNAME, PASSWORD) as mailbox:
+    filename_generator = FilenameGenerator()
+    mails = set()
     folders_dict = dict.fromkeys(create_topics(mailbox))
     for folder_name in folders_dict.keys():
         folders_dict[folder_name] = set()
-        mailbox.folder.set(folder_name) # lists folders in specific mailbox
+        mailbox.folder.set(folder_name)
         for msg in mailbox.fetch():
-            mail = create_mail_obj(msg)
-            mails.add(mail)  # creates set of all messages in mailbox
-
-            folders_dict[folder_name].add(mail)
-
-
-topics_dict = {f"/{key}": value for key, value in folders_dict.items()}
-print(f"{topics_dict=}")
+            mail_obj = create_mail_obj(msg, filename_generator)
+            mails.add(mail_obj)  # creates set of all messages in mailbox
+            folders_dict[folder_name].add(mail_obj)
 
 
-mails_dict = {}
-for mail in mails:
-    if mail.year not in mails_dict:
-        mails_dict[mail.year] = {}
-    if mail.month not in mails_dict[mail.year]:
-        mails_dict[mail.year][mail.month] = {}
-    if mail.day not in mails_dict[mail.year][mail.month]:
-        mails_dict[mail.year][mail.month][mail.day] = {}
-    if mail not in mails_dict[mail.year][mail.month][mail.day]:
-        mails_dict[mail.year][mail.month][mail.day][mail.filename] = mail.content
+def create_topic_dir(tpc_dct):
+    topics_dict = {f"/{key}": value for key, value in tpc_dct.items()}
+    return topics_dict
 
-senders_dict = {}
-for mail in mails:
-    if mail.sender not in senders_dict:
-        senders_dict[mail.sender] = {}
-    if mail not in senders_dict[mail.sender]:
-        senders_dict[mail.sender][mail.filename] = mail.content
 
-if __name__ == "__main__":
-    pprint.pprint("00_00")
+def create_timeline_dir(all_mails):
+    mails_dict = {}
+    for mail in all_mails:
+        if mail.year not in mails_dict:
+            mails_dict[mail.year] = {}
+        if mail.month not in mails_dict[mail.year]:
+            mails_dict[mail.year][mail.month] = {}
+        if mail.day not in mails_dict[mail.year][mail.month]:
+            mails_dict[mail.year][mail.month][mail.day] = {}
+        if mail not in mails_dict[mail.year][mail.month][mail.day]:
+            mails_dict[mail.year][mail.month][mail.day][mail.filename] = mail.content
+    return mails_dict
+
+
+def create_sender_dir(all_mails):
+    senders_dict = {}
+    for mail in all_mails:
+        if mail.sender not in senders_dict:
+            senders_dict[mail.sender] = {}
+        if mail not in senders_dict[mail.sender]:
+            senders_dict[mail.sender][mail.filename] = mail.content
+    return senders_dict
+
+
+def create_dirs(all_mails, tcp_dct):
+    mails_dict = create_timeline_dir(all_mails)
+    senders_dict = create_sender_dir(all_mails)
+    topic_dict = create_topic_dir(tcp_dct)
+    return mails_dict, senders_dict, topic_dict
+
+
+date_dirs_to_create = get_dirs_to_create(create_timeline_dir(mails))
+date_files = flatten_file_dict(create_timeline_dir(mails))
+
+senders_dirs_to_create = get_dirs_to_create(create_sender_dir(mails))
+sender_files = flatten_file_dict(create_sender_dir(mails))
+
+topics_dict = create_topic_dir(folders_dict)
+print(topics_dict)
+

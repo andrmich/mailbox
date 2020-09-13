@@ -1,8 +1,3 @@
-from pprint import pprint
-
-from rich import print
-
-from mail import mails_dict, senders_dict
 
 def _flatten_dict(dd, separator="/", prefix=""):
     return (
@@ -33,9 +28,3 @@ def get_dirs_to_create(nested: dict, path="/"):
             dirs_to_create.update(get_dirs_to_create(v, new_path))
     return dirs_to_create
 
-
-date_dirs_to_create = get_dirs_to_create(mails_dict)
-date_files = flatten_file_dict(mails_dict)
-
-senders_dirs_to_create = get_dirs_to_create(senders_dict)
-sender_files = flatten_file_dict(senders_dict)
