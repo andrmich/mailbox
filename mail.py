@@ -39,27 +39,34 @@ class FilenameGenerator:
 
 
 filename_generator = FilenameGenerator()
-folders_dict = {}
 mails = set()
 folders = set()
 
+def create_topics(mbox):
+    folders_mailbox = mbox.folder.list()
+    return [folder["name"] for folder in folders_mailbox]
+
+
+def create_mail_obj(message):
+    mail = MailMessage(
+        sender=message.from_,
+        subject=message.subject[:10],
+        year=str(message.date.year),
+        month=str(message.date.month),
+        day=str(message.date.day),
+        content=bytes(msg.html, encoding="utf-8"),
+    )
+    mail.filename = filename_generator.get_filename(mail)
+    return mail
+
+
 with MailBox(HOST).login(USERNAME, PASSWORD) as mailbox:
-    folders_mailbox = mailbox.folder.list()
-    folder_names = [folder["name"] for folder in folders_mailbox]
-    for folder_name in folder_names:
-        mailbox.folder.set(folder_name) # lists folders in specific mailbox
-        folders.add(folder_name)
+    folders_dict = dict.fromkeys(create_topics(mailbox))
+    for folder_name in folders_dict.keys():
         folders_dict[folder_name] = set()
+        mailbox.folder.set(folder_name) # lists folders in specific mailbox
         for msg in mailbox.fetch():
-            mail = MailMessage(
-                sender=msg.from_,
-                subject=msg.subject[:10],
-                year=str(msg.date.year),
-                month=str(msg.date.month),
-                day=str(msg.date.day),
-                content=bytes(msg.html, encoding="utf-8"),
-            )
-            mail.filename = filename_generator.get_filename(mail)
+            mail = create_mail_obj(msg)
             mails.add(mail)  # creates set of all messages in mailbox
 
             folders_dict[folder_name].add(mail)
