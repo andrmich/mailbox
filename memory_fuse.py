@@ -1,10 +1,9 @@
 import errno
 import os
+import pprint
 import sys
 
-from fuse import FUSE, Operations, FuseOSError
-
-import pprint
+from fuse import FUSE, FuseOSError, Operations
 
 
 class Passthrough(Operations):

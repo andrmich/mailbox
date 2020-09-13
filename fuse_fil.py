@@ -1,13 +1,14 @@
 import errno
 import os
+import pprint
 import sys
 from collections import defaultdict
 from stat import S_IFDIR, S_IFREG
 from time import time
 
-from fuse import FUSE, Operations, FuseOSError
+from fuse import FUSE, FuseOSError, Operations
+
 import new_mail
-import pprint
 
 
 class MyStat:

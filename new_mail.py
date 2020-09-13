@@ -1,14 +1,13 @@
-from typing import Set, Any
+import datetime
+import email
+import json
+import os
+import pprint
+from collections import defaultdict
+from typing import Any, Set
 
 from imap_tools import MailBox
 from imbox import Imbox
-import email
-from collections import defaultdict
-import datetime
-import pprint
-import os
-from collections import defaultdict
-import json
 from rich import print
 
 # SSL Context docs https://docs.python.org/3/library/ssl.html#ssl.create_default_context
@@ -33,11 +32,11 @@ class AllMessages(dict):
     def rename_and_insert(self, mail: MailMessage):
         desired_name = f"{mail.sender}-{mail.subject}"
         if desired_name not in self:
-            self[desired_name] = mail.uid
+            self[desired_name] = mail
             self.known_subjects[desired_name] = 0
             return
         self.known_subjects[desired_name] += 1
-        self[f"{desired_name}-{self.known_subjects[desired_name]}"] = mail.uid
+        self[f"{desired_name}-{self.known_subjects[desired_name]}"] = mail
 
     def return_filename(self, content=None):
         for key, value in self.items():
@@ -86,7 +85,7 @@ with Imbox(
         mail = MailMessage(sender=sender, subject=message.subject[:15], uid=uid)
         mails.add(mail)
         all_messages.rename_and_insert(mail)
-        fil_name = all_messages.return_filename(mail.uid)
+        fil_name = all_messages.return_filename(mail)
         dates.add(
             (DateDict(year=year, month=month, day=day, filename=fil_name, uid=uid))
         )
@@ -133,12 +132,10 @@ senders_dict = {}
 for mail in mails:
     if mail.sender not in senders_dict:
         senders_dict[mail.sender] = {}
-    if mail.uid not in senders_dict[mail.sender]:
-        senders_dict[mail.sender][fil_name_dct[mail.uid]] = {}
-    if mail.uid not in senders_dict[mail.sender][fil_name_dct[mail.uid]]:
-        senders_dict[mail.sender][fil_name_dct[mail.uid]] = content_dct[
-            fil_name_dct[mail.uid]
-        ]
+    if mail not in senders_dict[mail.sender]:
+        senders_dict[mail.sender][fil_name_dct[mail]] = {}
+    if mail not in senders_dict[mail.sender][fil_name_dct[mail]]:
+        senders_dict[mail.sender][fil_name_dct[mail]] = content_dct[fil_name_dct[mail]]
 
 # folders_dict = {}
 

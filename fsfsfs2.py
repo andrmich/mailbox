@@ -1,30 +1,24 @@
 #!/usr/bin/env python
-from __future__ import print_function, absolute_import, division
+from __future__ import absolute_import, division, print_function
+
+import inspect
+import logging
 import os
 import types
-import inspect
-
-from typing import Dict, cast
-import logging
-
-from rich import print
-from rich import inspect as rich_inspect
-
 from collections import defaultdict
 from errno import ENOENT
 from stat import S_IFDIR, S_IFLNK, S_IFREG
 from time import time
+from typing import Dict, cast
 
-from fuse import FUSE, Operations, LoggingMixIn
+from fuse import FUSE, LoggingMixIn, Operations
+from rich import inspect as rich_inspect
+from rich import print
 
-from mail import new_folder_uid_dict, content_dct, fil_name_dct
+from directory_tree import (date_dirs_to_create, date_files, sender_files,
+                            senders_dirs_to_create)
+from mail import topics_dict
 
-from directory_tree import (
-    date_files,
-    date_dirs_to_create,
-    senders_dirs_to_create,
-    sender_files,
-)
 
 class FuseOSError(OSError):
     def __init__(self, errno, filename=None):
@@ -115,7 +109,6 @@ class Memory(Operations):
             )
 
         for key, value in date_files.items():
-            # print(f"{value=}")
             self.files[f"/timeline{key}"] = PseudoFile(
                 {
                     "st_mode": 33188,
@@ -155,8 +148,7 @@ class Memory(Operations):
 
         # print(f"{elem.keys()=}")
         # print(self.files.keys())
-        for key, value in new_folder_uid_dict.items():
-            # print(f"{value=}")
+        for key, value in topics_dict.items():
             self.files[f"/topics{key}"] = Directory(
                 {
                     "st_mode": 16877,
@@ -166,8 +158,8 @@ class Memory(Operations):
                     "st_nlink": 2,
                 }
             )
-            for uid in value:
-                self.files[f"/topics{key}/{fil_name_dct[uid]}"] = PseudoFile(
+            for mail in value:
+                self.files[f"/topics{key}/{mail.filename}"] = PseudoFile(
                     {
                         "st_mode": 33188,
                         "st_nlink": 1,
@@ -177,7 +169,7 @@ class Memory(Operations):
                         "st_atime": 1599908285.6278203,
                     }
                 )
-                self.data[f"/topics{key}/{fil_name_dct[uid]}"] = content_dct[uid]
+                self.data[f"/topics{key}/{mail.filename}"] = mail.content
 
     def chmod(self, path, mode):
         this_function_name = cast(

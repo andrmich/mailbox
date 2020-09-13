@@ -1,21 +1,19 @@
 #!/usr/bin/env python
-from __future__ import print_function, absolute_import, division
+from __future__ import absolute_import, division, print_function
+
+import inspect
+import logging
 import os
 import types
-import inspect
-
-from typing import Dict, cast
-import logging
-
-from rich import print
-from rich import inspect as rich_inspect
-
 from collections import defaultdict
 from errno import ENOENT
 from stat import S_IFDIR, S_IFLNK, S_IFREG
 from time import time
+from typing import Dict, cast
 
-from fuse import FUSE, Operations, LoggingMixIn
+from fuse import FUSE, LoggingMixIn, Operations
+from rich import inspect as rich_inspect
+from rich import print
 
 
 class FuseOSError(OSError):
