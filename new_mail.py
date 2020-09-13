@@ -65,7 +65,6 @@ content_dct = defaultdict(bytes)
 fil_name_dct = {}
 
 
-
 with Imbox(
     HOST,
     username=USERNAME,
@@ -79,6 +78,7 @@ with Imbox(
     mails = set()
     dates = set()
     for uid, message in all_inbox_messages[::]:
+        print(message)
         sender = message.sent_from[0]["email"]
         year, month, day = message.parsed_date.strftime("%Y-%m-%d").split("-")
 
@@ -94,6 +94,7 @@ with Imbox(
         fil_name_dct[uid] = fil_name
 
 from imapclient import IMAPClient
+
 folder_uid_dct = {}
 folders = set()
 with IMAPClient(host=HOST) as client:
@@ -106,13 +107,13 @@ with IMAPClient(host=HOST) as client:
         folder_uid_dct[folder_] = set()
     for folder_ in folders:
         client.select_folder(folder_, readonly=True)
-        messages = client.search(['ALL'])
-        for uid, message_data in client.fetch(messages, 'RFC822').items():
-            email_message = email.message_from_bytes(message_data[b'RFC822'])
+        messages = client.search(["ALL"])
+        for uid, message_data in client.fetch(messages, "RFC822").items():
+            email_message = email.message_from_bytes(message_data[b"RFC822"])
             # print(f"{folder_=} - {uid} --  {email_message['Message-ID']}")
             folder_uid_dct[folder_].add(uid)
-
-print(folder_uid_dct)
+print(folders)
+# print(folder_uid_dct)
 
 dates_dict = {}
 
@@ -124,7 +125,9 @@ for date in dates:
     if date.day not in dates_dict[date.year][date.month]:
         dates_dict[date.year][date.month][date.day] = {}
     if date.filename not in dates_dict[date.year][date.month][date.day]:
-        dates_dict[date.year][date.month][date.day][date.filename] = date.uid
+        dates_dict[date.year][date.month][date.day][date.filename] = content_dct[
+            date.filename
+        ]
 
 senders_dict = {}
 for mail in mails:
@@ -133,7 +136,9 @@ for mail in mails:
     if mail.uid not in senders_dict[mail.sender]:
         senders_dict[mail.sender][fil_name_dct[mail.uid]] = {}
     if mail.uid not in senders_dict[mail.sender][fil_name_dct[mail.uid]]:
-        senders_dict[mail.sender][fil_name_dct[mail.uid]] = mail.uid
+        senders_dict[mail.sender][fil_name_dct[mail.uid]] = content_dct[
+            fil_name_dct[mail.uid]
+        ]
 
 # folders_dict = {}
 
@@ -157,17 +162,18 @@ def default_to_regular(d):
 def get_path_dict(paths):
     new_path_dict = nested_dict()
     for path in paths:
-        parts = path.split('/')
+        parts = path.split("/")
         if parts:
             # marcher = new_path_dict
             for key in parts[:-1]:
                 marcher = new_path_dict[key]
                 print(f"{parts[-1]}")
                 print(f"{path=}")
-                marcher[(parts[-1])] = 'lol'
+                marcher[(parts[-1])] = "lol"
                 # marcher[(parts[-1])] =  set()
 
     return default_to_regular(new_path_dict)
+
 
 print(f"{folders=}")
 folders_dict = get_path_dict(folders)
