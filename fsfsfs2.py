@@ -17,7 +17,15 @@ from time import time
 
 from fuse import FUSE, Operations, LoggingMixIn
 
-from directory_tree import elem, set_dirs_to_create
+from new_mail import folder_uid_dct
+
+from directory_tree import (
+    date_files,
+    date_dirs_to_create,
+    senders_dirs_to_create,
+    sender_files,
+)
+from new_mail import content_dct
 
 
 class FuseOSError(OSError):
@@ -47,6 +55,7 @@ class Memory(Operations):
     def __init__(self):
         self.files: Dict[str, PseudoFile] = {}
         self.data = defaultdict(bytes)
+        self.content = content_dct
         self.fd = 0
         now = time()
         self.files = {
@@ -97,7 +106,7 @@ class Memory(Operations):
                 }
             ),
         }
-        for key in set_dirs_to_create:
+        for key in date_dirs_to_create:
             self.files[f"/timeline{key}"] = Directory(
                 {
                     "st_mode": 16877,
@@ -108,7 +117,7 @@ class Memory(Operations):
                 }
             )
 
-        for key, value in elem.items():
+        for key, value in date_files.items():
             # print(f"{value=}")
             self.files[f"/timeline{key}"] = PseudoFile(
                 {
@@ -122,10 +131,46 @@ class Memory(Operations):
             )
             self.data[f"/timeline{key}"] = value
             # print(self.data[f"/timeline{key}"])
+        for key in senders_dirs_to_create:
 
+            self.files[f"/sender{key}"] = Directory(
+                {
+                    "st_mode": 16877,
+                    "st_ctime": 1599908032.1020591,
+                    "st_mtime": 1599908032.1020591,
+                    "st_atime": 1599908032.1020591,
+                    "st_nlink": 2,
+                }
+            )
+
+        for key, value in sender_files.items():
+            # print(f"{value=}")
+            self.files[f"/sender{key}"] = PseudoFile(
+                {
+                    "st_mode": 33188,
+                    "st_nlink": 1,
+                    "st_size": 1441,
+                    "st_ctime": 1599908285.62782,
+                    "st_mtime": 1599908285.6278203,
+                    "st_atime": 1599908285.6278203,
+                }
+            )
+            self.data[f"/sender{key}"] = value
         # print(f"{elem.keys()=}")
         # print(self.files.keys())
-
+        for key, value in date_files.items():
+            # print(f"{value=}")
+            self.files[f"/timeline{key}"] = PseudoFile(
+                {
+                    "st_mode": 33188,
+                    "st_nlink": 1,
+                    "st_size": 1441,
+                    "st_ctime": 1599908285.62782,
+                    "st_mtime": 1599908285.6278203,
+                    "st_atime": 1599908285.6278203,
+                }
+            )
+            s
     def chmod(self, path, mode):
         this_function_name = cast(
             types.FrameType, inspect.currentframe()
@@ -163,7 +208,7 @@ class Memory(Operations):
         if path not in self.files:
             raise FuseOSError(ENOENT, filename=path)
         if path in self.data:
-            self.files[path]["st_size"]= len(self.data[path])
+            self.files[path]["st_size"] = len(self.content[self.data[path]])
         return self.files[path]
 
     def getxattr(self, path, name, position=0):
@@ -215,8 +260,8 @@ class Memory(Operations):
         # print(f"{path=}")
         # print(f"{offset=}")
         print(f"{size=}")
-        print(f"{self.data[path]=}, {len(self.data[path])}")
-        return self.data[path]
+        print(f"{self.data[path]=}, {len(self.content[self.data[path]])}")
+        return self.content[self.data[path]]
         # return self.data[path][offset : offset + size]
 
     def readdir(self, path, fh):

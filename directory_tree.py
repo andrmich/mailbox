@@ -1,87 +1,95 @@
 # from pprint import pprint
 from rich import print
 
-from new_mail import dates_dict
+# from new_mail import dates_dict, senders_dict
 
-# dates_dict = {
-#     "2020": {
-#         "03": {"23": {"324"}},
-#         "06": {
-#             "02": {"326"},
-#             "03": {"325", "330"},
-#             "12": {"313"},
-#             "16": {"307"},
-#             "17": {"311", "339", "336"},
-#             "24": {"363"},
-#             "28": {"275"},
-#             "29": {"367", "354"},
-#             "30": {"368"},
-#         },
-#         "07": {"04": {"369"}, "09": {"366"}},
-#         "09": {"08": {"370", "372", "373"}},},
-#     "2021": {
-#         "03": {"23": {"324"}},
-#         "06": {
-#             "02": {"326"},
-#             "03": {"325", "330"},
-#             "12": {"313"},
-#         },
-#     }
-# }
-# dates_dict = {
-#     "2020": {
-#         "03": {
-#             "23": {"no-reply@accounts.google.com-Alert bezpiecze": ["fileconent23"]}
-#         },
-#         "06": {
-#             "02": {"no-reply@accounts.google.com-Alert bezpiecze-1": ["fileconent02"]},
-#             "03": {
-#                 "kontakt@best-you.pl-Jutro koniec ak": ["fileconent03"],
-#                 "kontakt@doradca.tv-Zerowe stopy pr": ["fileconent03"],
-#             },
-#             "12": {"hello@hyperskill.org-What to do if y": ["fileconent03"]},
-#             "16": {
-#                 "calendar-notification@google.com-Powiadomienie: ": ["fileconent03"]
-#             },
-#             "17": {
-#                 "contact@sinsay.com-Ustalenie noweg": ["fileconent03"],
-#                 "help@doyou.com-Hey, is this ri": ["fileconent03"],
-#             },
-#             "no-reply@m.mail.coursera.org-Lead for Change": ["fileconent03"],
-#         },
-#         "24": {"googleaccount-noreply@google.com-Sabina, sprawdź": ["fileconent03"]},
-#         "28": {"kontakt@doradca.tv-Czy jesteśmy w ": ["fileconent03"]},
-#         "29": {
-#             "no-reply@accounts.google.com-Alert bezpiecze-2": ["fileconent03"],
-#             "no-reply@accounts.google.com-Alert bezpiecze-3": ["fileconent03"],
-#         },
-#         "30": {"kontakt@doradca.tv-W obawie przed ": ["fileconent03"]},
-#     },
-#     "07": {
-#         "04": {"kontakt@doradca.tv-Skład portfela ": ["fileconent03"]},
-#         "09": {"no-reply@t.mail.coursera.org-Welcome to Cont": ["fileconent03"]},
-#     },
-#     "09": {
-#         "08": {
-#             "support@fastmail.com-Your import of ": ["fileconent03"],
-#             "support@fastmail.com-Your import of -1": ["fileconent03"],
-#             "support@fastmail.com-Your import of -2": ["fileconent03"],
-#         },
-#     },
-#     "2021": {
-#         "07": {
-#             "04": {"kontakt@doradca.tv-Skład portfela ": ["fileconent03"]},
-#             "09": {"no-reply@t.mail.coursera.org-Welcome to Cont": ["fileconent03"]},
-#         },
-#         "09": {
-#             "08": {
-#                 "support@fastmail.com-Your import of ": ["fileconent03"],
-#                 "support@fastmail.com-Your import of -1": ["fileconent03"],
-#                 "support@fastmail.com-Your import of -2": ["fileconent03"],
-#             }
-#         },
-#     },
-# }
+dates_dict = {
+    "2020": {
+        "03": {"23": {"no-reply@accounts.google.com-Alert bezpiecze": b"324"}},
+        "06": {
+            "02": {"no-reply@accounts.google.com-Alert bezpiecze-1": b"326"},
+            "03": {
+                "kontakt@best-you.pl-Jutro koniec ak": b"330",
+                "kontakt@doradca.tv-Zerowe stopy pr": b"325",
+            },
+            "12": {"hello@hyperskill.org-What to do if y": b"313"},
+            "16": {"calendar-notification@google.com-Powiadomienie: ": b"307"},
+            "17": {
+                "contact@sinsay.com-Ustalenie noweg": b"339",
+                "help@doyou.com-Hey, is this ri": b"311",
+                "no-reply@m.mail.coursera.org-Lead for Change": b"336",
+            },
+            "24": {"googleaccount-noreply@google.com-Sabina, sprawdź": b"363"},
+            "28": {"kontakt@doradca.tv-Czy jesteśmy w ": b"275"},
+            "29": {
+                "no-reply@accounts.google.com-Alert bezpiecze-2": b"354",
+                "no-reply@accounts.google.com-Alert bezpiecze-3": b"367",
+            },
+            "30": {"kontakt@doradca.tv-W obawie przed ": b"368"},
+        },
+        "07": {
+            "04": {"kontakt@doradca.tv-Skład portfela ": b"369"},
+            "09": {"no-reply@t.mail.coursera.org-Welcome to Cont": b"366"},
+        },
+        "09": {
+            "08": {
+                "support@fastmail.com-Your import of ": b"370",
+                "support@fastmail.com-Your import of -1": b"372",
+                "support@fastmail.com-Your import of -2": b"373",
+            }
+        },
+    },
+    "2021": {
+        "07": {
+            "support@fastmail.com-Your import of ": b"370",
+            "support@fastmail.com-Your import of -1": b"372",
+            "support@fastmail.com-Your import of -2": b"373",
+        },
+        "09": {
+            "08": {
+                "kontakt@best-you.pl-Jutro koniec ak": b"330",
+                "kontakt@doradca.tv-Zerowe stopy pr": b"325",
+            },
+            "12": {"hello@hyperskill.org-What to do if y": b"313"},
+        },
+    },
+}
+
+senders_dict = {
+    "calendar-notification@google.com": {
+        "calendar-notification@google.com-Powiadomienie: ": b"307"
+    },
+    "contact@sinsay.com": {"contact@sinsay.com-Ustalenie noweg": b"339"},
+    "googleaccount-noreply@google.com": {
+        "googleaccount-noreply@google.com-Sabina, sprawdź": b"363"
+    },
+    "hello@hyperskill.org": {"hello@hyperskill.org-What to do if y": b"313"},
+    "help@doyou.com": {"help@doyou.com-Hey, is this ri": b"311"},
+    "kontakt@best-you.pl": {"kontakt@best-you.pl-Jutro koniec ak": b"330"},
+    "kontakt@doradca.tv": {
+        "kontakt@doradca.tv-Czy jesteśmy w ": b"275",
+        "kontakt@doradca.tv-Skład portfela ": b"369",
+        "kontakt@doradca.tv-W obawie przed ": b"368",
+        "kontakt@doradca.tv-Zerowe stopy pr": b"325",
+    },
+    "no-reply@accounts.google.com": {
+        "no-reply@accounts.google.com-Alert bezpiecze": b"324",
+        "no-reply@accounts.google.com-Alert bezpiecze-1": b"326",
+        "no-reply@accounts.google.com-Alert bezpiecze-2": b"354",
+        "no-reply@accounts.google.com-Alert bezpiecze-3": b"367",
+    },
+    "no-reply@m.mail.coursera.org": {
+        "no-reply@m.mail.coursera.org-Lead for Change": b"336"
+    },
+    "no-reply@t.mail.coursera.org": {
+        "no-reply@t.mail.coursera.org-Welcome to Cont": b"366"
+    },
+    "support@fastmail.com": {
+        "support@fastmail.com-Your import of ": b"370",
+        "support@fastmail.com-Your import of -1": b"372",
+        "support@fastmail.com-Your import of -2": b"373",
+    },
+}
 
 
 def _flatten_dict(dd, separator="/", prefix=""):
@@ -101,12 +109,12 @@ def flatten_file_dict(dd):
     # print()
     path_s = {"/" + k: v for k, v in _flatten_dict(dd).items()}
     # print(path_s)
-    elem = {}
+    files_paths = {}
     for key, value in path_s.items():
-        elem[key] = value
+        files_paths[key] = value
 
-    print(f"{elem=}")
-    return elem
+    print(f"{files_paths=}")
+    return files_paths
 
 
 def get_dirs_to_create(nested: dict, path="/"):
@@ -119,10 +127,10 @@ def get_dirs_to_create(nested: dict, path="/"):
     return dirs_to_create
 
 
+date_dirs_to_create = get_dirs_to_create(dates_dict)
+date_files = flatten_file_dict(dates_dict)
 
+senders_dirs_to_create = get_dirs_to_create(senders_dict)
+sender_files = flatten_file_dict(senders_dict)
 
-dirs_to_create = get_dirs_to_create(dates_dict)
-elem = flatten_file_dict(dates_dict)
-elem_keys = flatten_file_dict(dates_dict).keys()
-
-set_dirs_to_create = dirs_to_create - set(elem_keys)
+print(senders_dirs_to_create)
