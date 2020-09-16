@@ -1,4 +1,5 @@
 import json
+import os
 import pprint
 from uuid import uuid4
 
@@ -9,7 +10,8 @@ from directory_tree import get_dirs_to_create, flatten_file_dict
 HOST = "imap.fastmail.com"
 USERNAME = "klops@fastmail.com"
 PASSWORD = "rybvb7c275ywquu3"
-
+# USERNAME = os.environ["MAILBOX_USERNAME"]
+# PASSWORD = os.environ["MAILBOX_PASSWORD"]
 
 class MailMessage:
     def __init__(self, sender, subject, year, month, day, content, filename=None):

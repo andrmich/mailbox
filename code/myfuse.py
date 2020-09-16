@@ -42,7 +42,7 @@ class Memory(Operations):
     "Example memory filesystem. Supports only one level of files."
 
     def __init__(self):
-        self.files: Dict[str, PseudoFile] = {}
+        self.files = {}
         self.data = defaultdict(bytes)
         self.fd = 0
         now = time()
@@ -156,7 +156,7 @@ class Memory(Operations):
                 }
             )
             for mail in value:
-                self.files[f"/topics{key}/{mail.filename}"] = PseudoFile(
+                self.files[f"/topics{key}/{mail.filename}.html"] = PseudoFile(
                     {
                         "st_mode": 33188,
                         "st_nlink": 1,
@@ -166,7 +166,7 @@ class Memory(Operations):
                         "st_atime": 1599908285.6278203,
                     }
                 )
-                self.data[f"/topics{key}/{mail.filename}"] = mail.content
+                self.data[f"/topics{key}/{mail.filename}.html"] = mail.content
 
     def chmod(self, path, mode):
         this_function_name = cast(
