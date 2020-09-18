@@ -206,5 +206,4 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     logging.basicConfig(level=logging.DEBUG)
-    # Memory.create_files_timeline(elem)
     fuse = FUSE(Memory(), args.mount, foreground=True, allow_other=True)

@@ -1,18 +1,13 @@
-import json
 import os
-import pprint
 from uuid import uuid4
 
 from directory_tree import flatten_file_dict, get_dirs_to_create
 from imap_tools import MailBox
-from rich import inspect, print
 from tqdm import tqdm
 
 HOST = "imap.fastmail.com"
-USERNAME = "klops@fastmail.com"
-PASSWORD = "rybvb7c275ywquu3"
-# USERNAME = os.environ["MAILBOX_USERNAME"]
-# PASSWORD = os.environ["MAILBOX_PASSWORD"]
+USERNAME = os.environ["MAILBOX_USERNAME"]
+PASSWORD = os.environ["MAILBOX_PASSWORD"]
 
 
 class MailMessage:
@@ -52,7 +47,7 @@ def create_topics(mbox):
 def create_mail_obj(message, filename_generator):
     mail_ = MailMessage(
         sender=message.from_,
-        subject=message.subject[:10],
+        subject=message.subject,
         year=str(message.date.year),
         month=str(message.date.month),
         day=str(message.date.day),
