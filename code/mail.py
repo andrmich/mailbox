@@ -3,15 +3,17 @@ import os
 import pprint
 from uuid import uuid4
 
+from directory_tree import flatten_file_dict, get_dirs_to_create
 from imap_tools import MailBox
 from rich import inspect, print
-from directory_tree import get_dirs_to_create, flatten_file_dict
+from tqdm import tqdm
 
 HOST = "imap.fastmail.com"
 USERNAME = "klops@fastmail.com"
 PASSWORD = "rybvb7c275ywquu3"
 # USERNAME = os.environ["MAILBOX_USERNAME"]
 # PASSWORD = os.environ["MAILBOX_PASSWORD"]
+
 
 class MailMessage:
     def __init__(self, sender, subject, year, month, day, content, filename=None):
@@ -59,11 +61,12 @@ def create_mail_obj(message, filename_generator):
     mail_.filename = filename_generator.get_filename(mail_)
     return mail_
 
+
 with MailBox(HOST).login(USERNAME, PASSWORD) as mailbox:
     filename_generator = FilenameGenerator()
     mails = set()
     folders_dict = dict.fromkeys(create_topics(mailbox))
-    for folder_name in folders_dict.keys():
+    for folder_name in tqdm(folders_dict.keys()):
         folders_dict[folder_name] = set()
         mailbox.folder.set(folder_name)
         for msg in mailbox.fetch():
@@ -108,12 +111,12 @@ def create_dirs(all_mails, tcp_dct):
     return mails_dict, senders_dict, topic_dict
 
 
-date_dirs_to_create = get_dirs_to_create(create_timeline_dir(mails))
+date_dirs_to_create_set = get_dirs_to_create(create_timeline_dir(mails))
 date_files = flatten_file_dict(create_timeline_dir(mails))
+date_dirs_to_create = date_dirs_to_create_set - date_files.keys()
 
-senders_dirs_to_create = get_dirs_to_create(create_sender_dir(mails))
+senders_dirs_to_create_set = get_dirs_to_create(create_sender_dir(mails))
 sender_files = flatten_file_dict(create_sender_dir(mails))
+senders_dirs_to_create = senders_dirs_to_create_set - sender_files.keys()
 
 topics_dict = create_topic_dir(folders_dict)
-print(topics_dict)
-

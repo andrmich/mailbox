@@ -1,4 +1,3 @@
-
 def _flatten_dict(dd, separator="/", prefix=""):
     return (
         {
@@ -27,4 +26,3 @@ def get_dirs_to_create(nested: dict, path="/"):
             new_path = path + str(k) + "/"
             dirs_to_create.update(get_dirs_to_create(v, new_path))
     return dirs_to_create
-

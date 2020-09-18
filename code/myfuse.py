@@ -6,15 +6,36 @@ import logging
 import os
 import types
 from collections import defaultdict
-from errno import ENOENT
-from stat import S_IFDIR, S_IFLNK, S_IFREG
+from errno import ENOENT, EPERM
 from time import time
-from typing import Dict, cast
+from typing import cast
 
-from fuse import FUSE, LoggingMixIn, Operations
-from rich import inspect as rich_inspect
+from fuse import FUSE, Operations
+from mail import (
+    date_dirs_to_create,
+    date_files,
+    sender_files,
+    senders_dirs_to_create,
+    topics_dict,
+)
 from rich import print
-from mail import topics_dict, sender_files, senders_dirs_to_create, date_files, date_dirs_to_create
+
+DIR_DCT = {
+    "st_mode": 16877,
+    "st_ctime": 1599908032.1020591,
+    "st_mtime": 1599908032.1020591,
+    "st_atime": 1599908032.1020591,
+    "st_nlink": 2,
+}
+
+FILE_DCT = {
+    "st_mode": 33188,
+    "st_nlink": 1,
+    "st_size": 0,
+    "st_ctime": 1599908285.62782,
+    "st_mtime": 1599908285.6278203,
+    "st_atime": 1599908285.6278203,
+}
 
 
 class FuseOSError(OSError):
@@ -38,6 +59,15 @@ class Directory(PseudoFile):
         self.isdir = True
 
 
+def create_main_dir_tree():
+    return {
+        "/": Directory(DIR_DCT),
+        "/timeline": Directory(DIR_DCT),
+        "/sender": Directory(DIR_DCT),
+        "/topics": Directory(DIR_DCT),
+    }
+
+
 class Memory(Operations):
     "Example memory filesystem. Supports only one level of files."
 
@@ -46,159 +76,40 @@ class Memory(Operations):
         self.data = defaultdict(bytes)
         self.fd = 0
         now = time()
-        self.files = {
-            "/": Directory(
-                {
-                    "st_mode": 16877,
-                    "st_ctime": 1599908032.1020591,
-                    "st_mtime": 1599908032.1020591,
-                    "st_atime": 1599908032.1020591,
-                    "st_nlink": 2,
-                }
-            ),
-            "/timeline": Directory(
-                {
-                    "st_mode": 16877,
-                    "st_ctime": 1599908032.1020591,
-                    "st_mtime": 1599908032.1020591,
-                    "st_atime": 1599908032.1020591,
-                    "st_nlink": 2,
-                }
-            ),
-            "/sender": Directory(
-                {
-                    "st_mode": 16877,
-                    "st_ctime": 1599908032.1020591,
-                    "st_mtime": 1599908032.1020591,
-                    "st_atime": 1599908032.1020591,
-                    "st_nlink": 2,
-                }
-            ),
-            "/topics": Directory(
-                {
-                    "st_mode": 16877,
-                    "st_ctime": 1599908032.1020591,
-                    "st_mtime": 1599908032.1020591,
-                    "st_atime": 1599908032.1020591,
-                    "st_nlink": 2,
-                }
-            ),
-            "/fset_file": PseudoFile(
-                {
-                    "st_mode": 33188,
-                    "st_nlink": 1,
-                    "st_size": 0,
-                    "st_ctime": 1599908285.62782,
-                    "st_mtime": 1599908285.6278203,
-                    "st_atime": 1599908285.6278203,
-                }
-            ),
-        }
+        self.files = create_main_dir_tree()
+        self.create_timeline_dir_tree()
+        self.create_sender_dir_tree()
+        self.create_topics_dir_tree()
+
+    def create_timeline_dir_tree(self):
         for key in date_dirs_to_create:
-            self.files[f"/timeline{key}"] = Directory(
-                {
-                    "st_mode": 16877,
-                    "st_ctime": 1599908032.1020591,
-                    "st_mtime": 1599908032.1020591,
-                    "st_atime": 1599908032.1020591,
-                    "st_nlink": 2,
-                }
-            )
-
+            self.files[f"/timeline{key}"] = Directory(DIR_DCT)
         for key, value in date_files.items():
-            self.files[f"/timeline{key}"] = PseudoFile(
-                {
-                    "st_mode": 33188,
-                    "st_nlink": 1,
-                    "st_size": 0,
-                    "st_ctime": 1599908285.62782,
-                    "st_mtime": 1599908285.6278203,
-                    "st_atime": 1599908285.6278203,
-                }
-            )
-            self.data[f"/timeline{key}"] = value
-            # print(self.data[f"/timeline{key}"])
+            self.files[f"/timeline{key}.html"] = PseudoFile(FILE_DCT)
+            self.data[f"/timeline{key}.html"] = value
 
-        for key in senders_dirs_to_create:
-            self.files[f"/sender{key}"] = Directory(
-                {
-                    "st_mode": 16877,
-                    "st_ctime": 1599908032.1020591,
-                    "st_mtime": 1599908032.1020591,
-                    "st_atime": 1599908032.1020591,
-                    "st_nlink": 2,
-                }
-            )
-        for key, value in sender_files.items():
-            # print(f"{value=}")
-            self.files[f"/sender{key}"] = PseudoFile(
-                {
-                    "st_mode": 33188,
-                    "st_nlink": 1,
-                    "st_size": 0,
-                    "st_ctime": 1599908285.62782,
-                    "st_mtime": 1599908285.6278203,
-                    "st_atime": 1599908285.6278203,
-                }
-            )
-            self.data[f"/sender{key}"] = value
-
-        # print(f"{elem.keys()=}")
-        # print(self.files.keys())
+    def create_topics_dir_tree(self):
         for key, value in topics_dict.items():
-            self.files[f"/topics{key}"] = Directory(
-                {
-                    "st_mode": 16877,
-                    "st_ctime": 1599908032.1020591,
-                    "st_mtime": 1599908032.1020591,
-                    "st_atime": 1599908032.1020591,
-                    "st_nlink": 2,
-                }
-            )
+            self.files[f"/topics{key}"] = Directory(DIR_DCT)
             for mail in value:
-                self.files[f"/topics{key}/{mail.filename}.html"] = PseudoFile(
-                    {
-                        "st_mode": 33188,
-                        "st_nlink": 1,
-                        "st_size": 0,
-                        "st_ctime": 1599908285.62782,
-                        "st_mtime": 1599908285.6278203,
-                        "st_atime": 1599908285.6278203,
-                    }
-                )
+                self.files[f"/topics{key}/{mail.filename}.html"] = PseudoFile(FILE_DCT)
                 self.data[f"/topics{key}/{mail.filename}.html"] = mail.content
 
+    def create_sender_dir_tree(self):
+        for key in senders_dirs_to_create:
+            self.files[f"/sender{key}"] = Directory(DIR_DCT)
+        for key, value in sender_files.items():
+            self.files[f"/sender{key}.html"] = PseudoFile(FILE_DCT)
+            self.data[f"/sender{key}.html"] = value
+
     def chmod(self, path, mode):
-        this_function_name = cast(
-            types.FrameType, inspect.currentframe()
-        ).f_code.co_name
-        print(this_function_name)
-        self.files[path]["st_mode"] &= 0o770000
-        self.files[path]["st_mode"] |= mode
-        return 0
+        raise FuseOSError(EPERM)
 
     def chown(self, path, uid, gid):
-        this_function_name = cast(
-            types.FrameType, inspect.currentframe()
-        ).f_code.co_name
-        print(this_function_name)
-        self.files[path]["st_uid"] = uid
-        self.files[path]["st_gid"] = gid
+        raise FuseOSError(EPERM)
 
     def create(self, path, mode):
-        self.files[path] = PseudoFile(
-            st_mode=(S_IFREG | mode),
-            st_nlink=1,
-            st_size=0,
-            st_ctime=time(),
-            st_mtime=time(),
-            st_atime=time(),
-        )
-
-        self.fd += 1
-        print(f"create({path=}, {mode=})\n{self.files}")
-        rich_inspect(self)
-        return self.fd
+        raise FuseOSError(EPERM)
 
     def getattr(self, path, fh=None):
         print(f"getattr({path=}, {fh=})")
@@ -226,49 +137,19 @@ class Memory(Operations):
         return attrs.keys()
 
     def mkdir(self, path, mode):
-        this_function_name = cast(
-            types.FrameType, inspect.currentframe()
-        ).f_code.co_name
-        print(this_function_name)
-        self.files[path] = Directory(
-            st_mode=(S_IFDIR | mode),
-            st_nlink=2,
-            st_size=0,
-            st_ctime=time(),
-            st_mtime=time(),
-            st_atime=time(),
-        )
-
-        self.files["/"]["st_nlink"] += 1
+        raise FuseOSError(EPERM)
 
     def open(self, path, flags):
-        this_function_name = cast(
-            types.FrameType, inspect.currentframe()
-        ).f_code.co_name
-        print(this_function_name)
         self.fd += 1
         return self.fd
 
     def read(self, path, size, offset, fh):
-        this_function_name = cast(
-            types.FrameType, inspect.currentframe()
-        ).f_code.co_name
-        print(this_function_name)
-        # print(f"{path=}")
-        # print(f"{offset=}")
-        # print(f"{size=}")
-        # print(f"{self.data[path]=}, {len(self.content[self.data[path]])}")
         return self.data[path]
-        # return self.data[path][offset : offset + size]
 
     def readdir(self, path, fh):
-        print(f"readdir({path=}, {fh=}")
-        if not self.files[path].isdir:
-            print("This is not a directory!")
         files_inside = {
             k: v for k, v in self.files.items() if k.startswith(path) and k != path
         }
-        # print(f"{files_inside=}")
         short_dir = list(
             set(
                 [
@@ -284,113 +165,37 @@ class Memory(Operations):
         return return_value
 
     def readlink(self, path):
-        this_function_name = cast(
-            types.FrameType, inspect.currentframe()
-        ).f_code.co_name
-        print(this_function_name)
         return self.data[path]
 
     def removexattr(self, path, name):
-        this_function_name = cast(
-            types.FrameType, inspect.currentframe()
-        ).f_code.co_name
-        print(this_function_name)
-        attrs = self.files[path].get("attrs", {})
-
-        try:
-            del attrs[name]
-        except KeyError:
-            pass  # Should return ENOATTR
+        raise FuseOSError(EPERM)
 
     def rename(self, old, new):
-        this_function_name = cast(
-            types.FrameType, inspect.currentframe()
-        ).f_code.co_name
-        print(this_function_name)
-        self.data[new] = self.data.pop(old)
-        self.files[new] = self.files.pop(old)
+        raise FuseOSError(EPERM)
 
     def rmdir(self, path):
-        this_function_name = cast(
-            types.FrameType, inspect.currentframe()
-        ).f_code.co_name
-        print(this_function_name)
-        # with multiple level support, need to raise ENOTEMPTY if contains any files
-        self.files.pop(path)
-        self.files["/"]["st_nlink"] -= 1
+        raise FuseOSError(EPERM)
 
     def setxattr(self, path, name, value, options, position=0):
-        this_function_name = cast(
-            types.FrameType, inspect.currentframe()
-        ).f_code.co_name
-        print(this_function_name)
-        # Ignore options
-        attrs = self.files[path].setdefault("attrs", {})
-        attrs[name] = value
+        raise FuseOSError(EPERM)
 
     def statfs(self, path):
-        this_function_name = cast(
-            types.FrameType, inspect.currentframe()
-        ).f_code.co_name
-        print(this_function_name)
         return dict(f_bsize=512, f_blocks=4096, f_bavail=2048)
 
     def symlink(self, target, source):
-        this_function_name = cast(
-            types.FrameType, inspect.currentframe()
-        ).f_code.co_name
-        print(this_function_name)
-        self.files[target] = dict(
-            st_mode=(S_IFLNK | 0o777), st_nlink=1, st_size=len(source)
-        )
-
-        self.data[target] = source
+        raise FuseOSError(EPERM)
 
     def truncate(self, path, length, fh=None):
-        this_function_name = cast(
-            types.FrameType, inspect.currentframe()
-        ).f_code.co_name
-        print(this_function_name)
-        # make sure extending the file fills in zero bytes
-        self.data[path] = self.data[path][:length].ljust(length, "\x00".encode("ascii"))
-        self.files[path]["st_size"] = length
+        raise FuseOSError(EPERM)
 
     def unlink(self, path):
-        this_function_name = cast(
-            types.FrameType, inspect.currentframe()
-        ).f_code.co_name
-        print(this_function_name)
-        self.data.pop(path)
-        self.files.pop(path)
+        raise FuseOSError(EPERM)
 
     def utimens(self, path, times=None):
-        this_function_name = cast(
-            types.FrameType, inspect.currentframe()
-        ).f_code.co_name
-        print(this_function_name)
-        now = time()
-        atime, mtime = times if times else (now, now)
-        self.files[path]["st_atime"] = atime
-        self.files[path]["st_mtime"] = mtime
+        raise FuseOSError(EPERM)
 
     def write(self, path, data, offset, fh):
-        this_function_name = cast(
-            types.FrameType, inspect.currentframe()
-        ).f_code.co_name
-        print(this_function_name)
-        self.data[path] = (
-            # make sure the data gets inserted at the right offset
-            self.data[path][:offset].ljust(offset, "\x00".encode("ascii"))
-            + data
-            # and only overwrites the bytes that data is replacing
-            + self.data[path][offset + len(data) :]
-        )
-        self.files[path]["st_size"] = len(self.data[path])
-        return len(data)
-
-
-def create_files_timeline(elem):
-    pass
+        raise FuseOSError(EPERM)
 
 
 if __name__ == "__main__":

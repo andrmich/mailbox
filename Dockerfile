@@ -23,9 +23,6 @@ COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
 EXPOSE 80
 
-COPY entrypoint.sh /code
-RUN chmod +x entrypoint.sh
 CMD ["/usr/bin/supervisord"]
 
-#CMD ["python", "myfuse.py", "/mountpoint" ]
 
