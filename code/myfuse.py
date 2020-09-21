@@ -2,7 +2,6 @@
 from __future__ import absolute_import, division, print_function
 
 import inspect
-import logging
 import os
 import types
 from collections import defaultdict
@@ -10,14 +9,7 @@ from errno import ENOENT, EPERM
 from time import time
 from typing import cast
 
-from fuse import FUSE, Operations
-from mail import (
-    date_dirs_to_create,
-    date_files,
-    sender_files,
-    senders_dirs_to_create,
-    topics_dict,
-)
+from fuse import Operations
 from rich import print
 
 DIR_DCT = {
@@ -40,11 +32,7 @@ FILE_DCT = {
 
 class FuseOSError(OSError):
     def __init__(self, errno, filename=None):
-        super(FuseOSError, self).__init__(errno, os.strerror(errno), filename)
-
-
-if not hasattr(__builtins__, "bytes"):
-    bytes = str
+        super().__init__(errno, os.strerror(errno), filename)
 
 
 class PseudoFile(dict):
@@ -69,33 +57,39 @@ def create_main_dir_tree():
 
 
 class Memory(Operations):
-    "Example memory filesystem. Supports only one level of files."
+    """ Memory filesystem operations. Read-only."""
 
-    def __init__(self):
+    def __init__(
+        self,
+        date_dirs_to_create,
+        date_files,
+        topics_dict,
+        senders_dirs_to_create,
+        sender_files,
+    ):
         self.files = {}
         self.data = defaultdict(bytes)
         self.fd = 0
-        now = time()
         self.files = create_main_dir_tree()
-        self.create_timeline_dir_tree()
-        self.create_sender_dir_tree()
-        self.create_topics_dir_tree()
+        self._create_timeline_dir_tree(date_dirs_to_create, date_files)
+        self._create_sender_dir_tree(senders_dirs_to_create, sender_files)
+        self._create_topics_dir_tree(topics_dict)
 
-    def create_timeline_dir_tree(self):
+    def _create_timeline_dir_tree(self, date_dirs_to_create, date_files):
         for key in date_dirs_to_create:
             self.files[f"/timeline{key}"] = Directory(DIR_DCT)
         for key, value in date_files.items():
             self.files[f"/timeline{key}.html"] = PseudoFile(FILE_DCT)
             self.data[f"/timeline{key}.html"] = value
 
-    def create_topics_dir_tree(self):
+    def _create_topics_dir_tree(self, topics_dict):
         for key, value in topics_dict.items():
             self.files[f"/topics{key}"] = Directory(DIR_DCT)
             for mail in value:
                 self.files[f"/topics{key}/{mail.filename}.html"] = PseudoFile(FILE_DCT)
                 self.data[f"/topics{key}/{mail.filename}.html"] = mail.content
 
-    def create_sender_dir_tree(self):
+    def _create_sender_dir_tree(self, senders_dirs_to_create, sender_files):
         for key in senders_dirs_to_create:
             self.files[f"/sender{key}"] = Directory(DIR_DCT)
         for key, value in sender_files.items():
@@ -196,14 +190,3 @@ class Memory(Operations):
 
     def write(self, path, data, offset, fh):
         raise FuseOSError(EPERM)
-
-
-if __name__ == "__main__":
-    import argparse
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument("mount")
-    args = parser.parse_args()
-
-    logging.basicConfig(level=logging.DEBUG)
-    fuse = FUSE(Memory(), args.mount, foreground=True, allow_other=True)

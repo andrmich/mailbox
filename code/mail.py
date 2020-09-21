@@ -1,4 +1,6 @@
+from base64 import b64decode
 import os
+from typing import List
 from uuid import uuid4
 
 from directory_tree import flatten_file_dict, get_dirs_to_create
@@ -6,8 +8,10 @@ from imap_tools import MailBox
 from tqdm import tqdm
 
 HOST = "imap.fastmail.com"
-USERNAME = os.environ["MAILBOX_USERNAME"]
-PASSWORD = os.environ["MAILBOX_PASSWORD"]
+# USERNAME = os.environ["MAILBOX_USERNAME"]
+# PASSWORD = os.environ["MAILBOX_PASSWORD"]
+USERNAME = "klops@fastmail.com"
+PASSWORD = "rybvb7c275ywquu3"
 
 
 class MailMessage:
@@ -17,7 +21,7 @@ class MailMessage:
         self.year = year
         self.month = month
         self.day = day
-        self.content = content
+        self.content: bytes = content
         self.filename = filename
         self.uuid = uuid4()
 
@@ -27,7 +31,7 @@ class MailMessage:
 
 class FilenameGenerator:
     def __init__(self):
-        self.known_subjects = dict()
+        self.known_subjects = {}
 
     def get_filename(self, mail: MailMessage):
         desired_name = f"{mail.sender}-{mail.subject}"
@@ -36,6 +40,9 @@ class FilenameGenerator:
         else:
             self.known_subjects[desired_name] += 1
             desired_name = f"{desired_name}-{self.known_subjects[desired_name]}"
+        desired_name = desired_name.replace(
+            "/", "_"
+        )  # '/' is an invalid character in a file name
         return desired_name
 
 
@@ -57,17 +64,21 @@ def create_mail_obj(message, filename_generator):
     return mail_
 
 
-with MailBox(HOST).login(USERNAME, PASSWORD) as mailbox:
-    filename_generator = FilenameGenerator()
-    mails = set()
-    folders_dict = dict.fromkeys(create_topics(mailbox))
-    for folder_name in tqdm(folders_dict.keys()):
-        folders_dict[folder_name] = set()
-        mailbox.folder.set(folder_name)
-        for msg in mailbox.fetch():
-            mail_obj = create_mail_obj(msg, filename_generator)
-            mails.add(mail_obj)  # creates set of all messages in mailbox
-            folders_dict[folder_name].add(mail_obj)
+def fetch_folders_and_mails():
+    with MailBox(HOST).login(USERNAME, PASSWORD) as mailbox:
+        filename_generator = FilenameGenerator()
+        mails = set()
+        folders_dict = dict.fromkeys(create_topics(mailbox))
+        for folder_name in tqdm(folders_dict.keys()):
+            folders_dict[folder_name] = set()
+            mailbox.folder.set(folder_name)
+            for msg in mailbox.fetch():
+                mail_obj = create_mail_obj(msg, filename_generator)
+                mails.add(mail_obj)  # creates set of all messages in mailbox
+                folders_dict[folder_name].add(mail_obj)
+        art = "ICAgICAgICBfCiAgICAgICB8RV0KICAgICAuLXw9PT09PS0uCiAgICAgfCB8IE1BSUwgfCAgIAogICAgIHxfX19fX19fX3xfX18KICAgICAgICAgIHx8CiAgICAgICAgICB8fAogICAgICAgICAgfHwgICB3d3cgICAgICAgICAgICAgICAgJSUlCiAgIHZ3diAgICB8fCAgIClfKCw7OzssICAgICAgICAsOyxcXy8gd3d3CiAgIClfKCAgICB8fCAgIFx8LyBcXy8gICAgICAgICApXyhcfCAgKF8pCiAgIFx8ICAgXCB8fCAvXFx8LyAgfC8gICAgICAgICBcfCBcfC8vIHwgCl9fX1x8Ly9qZ3N8fC8vX1xWL19cfC8vX19fX19fX1xcfC8vVi9cXHwvX18K"
+        print(str(b64decode(art), "ascii"))
+    return folders_dict, mails
 
 
 def create_topic_dir(tpc_dct):
@@ -105,13 +116,3 @@ def create_dirs(all_mails, tcp_dct):
     topic_dict = create_topic_dir(tcp_dct)
     return mails_dict, senders_dict, topic_dict
 
-
-date_dirs_to_create_set = get_dirs_to_create(create_timeline_dir(mails))
-date_files = flatten_file_dict(create_timeline_dir(mails))
-date_dirs_to_create = date_dirs_to_create_set - date_files.keys()
-
-senders_dirs_to_create_set = get_dirs_to_create(create_sender_dir(mails))
-sender_files = flatten_file_dict(create_sender_dir(mails))
-senders_dirs_to_create = senders_dirs_to_create_set - sender_files.keys()
-
-topics_dict = create_topic_dir(folders_dict)

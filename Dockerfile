@@ -5,11 +5,9 @@ RUN mkdir /supervisor
 
 WORKDIR /code
 
-
 RUN apt-get update
-RUN apt install -y python3-fusepy
 RUN apt-get install -y supervisor
-RUN apt-get install -y nginx nginx-extras apache2-utils
+RUN apt-get install -y nginx nginx-extras apache2-utils python3-fusepy
 
 
 COPY requirements.txt .

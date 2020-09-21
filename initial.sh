@@ -13,7 +13,3 @@ else
 fi
  docker run -e "MAILBOX_USERNAME=$EMAIL_ADDRESS" -e "MAILBOX_PASSWORD=$PASSWORD_INPUT" --rm --device /dev/fuse --cap-add SYS_ADMIN --security-opt apparmor:unconfined  --name my_mailbox -p 8080:80 mailbox
 
-#
-#sudo mkdir /mnt/dav
-#
-# sudo mount -t davfs -o noexec localhost:8080 /mnt/dav/

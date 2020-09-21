@@ -8,6 +8,9 @@ After build is complete, run the script initial.sh:
 
 `./initial.sh`
 
+Enter your fastmail.com credentials when prompted.
+Remember that you need to use a generated IMAP password and not your login password (more at https://www.fastmail.com/help/clients/apppassword.html). 
+
 After the progress bar reaches 100% you can access your mailbox in your browser at: 
 
 `localhost:8080/`
